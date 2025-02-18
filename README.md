@@ -1,4 +1,5 @@
 # Braintrust_data_downloader
+Downloads all experiments and datasets from a project on Braintrust into a directory as CSVs
 
 # Requirements
 ```
