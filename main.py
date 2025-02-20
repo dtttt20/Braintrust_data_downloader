@@ -171,6 +171,7 @@ def write_to_csv(events, directory, object_id):
         os.makedirs("braintrust_data", exist_ok=True)
         os.makedirs(f"braintrust_data/{directory}", exist_ok=True)
         if not events:
+            logger.warning(f"No events found for {object_id}")
             return
         
         filename = f"braintrust_data/{directory}/{object_id}.csv"
@@ -215,16 +216,27 @@ def download_data(endpoint, project_id=None, project_name=None, headers=None):
     try:
         failed_endpoints = []
         failed_objects = []
+        objects_without_events = []
         objects_list = fetch_object_list(endpoint, project_id=project_id, project_name=project_name, headers=headers)
         for obj in objects_list:
             try:
                 object_events = fetch_events(obj['id'], endpoint, headers=headers)
+                if not object_events:
+                    objects_without_events.append(obj['id'])
+                    continue
                 write_to_csv(object_events, endpoint, obj['id'])
             except Exception as e:
                 logger.error(f"Error processing {endpoint}/{obj['id']}: {str(e)}")
                 failed_endpoints.append(endpoint)
                 failed_objects.append(obj['id'])
                 continue
+
+        logger.info(f"Processing complete for {endpoint}:")
+        logger.info(f"Total objects processed: {len(objects_list)}")
+        logger.info(f"Objects with no events: {len(objects_without_events)}")
+        if objects_without_events:
+            logger.info(f"IDs of objects with no events: {objects_without_events}")
+
     except Exception as e:
         logger.error(f"Error downloading data for {endpoint}: {str(e)}")
         logger.error(f"Failed to download data for {endpoint} objects: {failed_objects}")
